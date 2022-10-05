@@ -1,7 +1,8 @@
 import styled from "@emotion/styled";
 import useSelectMonedas from "../hooks/useSelectMonedas";
+import Error from "./Error";
 import { monedas } from "../data/monedas";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const InpuSubmit = styled.input`
   background-color: #9497ff;
@@ -22,7 +23,13 @@ const InpuSubmit = styled.input`
 `;
 
 const Formulario = () => {
+  const [error, setError] = useState(false);
+  const [criptos, setCriptos] = useState([]);
   const [moneda, SelectMonedas] = useSelectMonedas("Elige tu moneda", monedas);
+  const [criptomoneda, SelectCriptoMoneda] = useSelectMonedas(
+    "Elige tu Criptomoneda",
+    criptos
+  );
 
   useEffect(() => {
     const consultarApi = async () => {
@@ -32,16 +39,37 @@ const Formulario = () => {
       const respuesta = await fetch(url);
       const resultado = await respuesta.json();
 
-      console.log(resultado.Data);
+      const arrayCriptos = resultado.Data.map((cripto) => {
+        const objeto = {
+          id: cripto.CoinInfo.Name,
+          nombre: cripto.CoinInfo.FullName,
+        };
+
+        return objeto;
+      });
+      setCriptos(arrayCriptos);
     };
     consultarApi();
   }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if ([moneda, criptomoneda].includes("")) {
+      setError(true);
+      return;
+    }
+    setError(false);
+  };
+
   return (
-    <form>
-      <SelectMonedas />
-      {moneda}
-      <InpuSubmit type="submit" value="Cotizar" />
-    </form>
+    <>
+      {error && <Error>Todos los campos son obligatorios</Error>}
+      <form onSubmit={handleSubmit}>
+        <SelectMonedas />
+        <SelectCriptoMoneda />
+        <InpuSubmit type="submit" value="Cotizar" />
+      </form>
+    </>
   );
 };
 
